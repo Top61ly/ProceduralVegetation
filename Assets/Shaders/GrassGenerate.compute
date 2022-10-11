@@ -1,0 +1,28 @@
+#pragma kernel InitInidrect
+#pragma kernel GenerateGrassBlade
+
+#include "ShaderLibrary/GrassInstanceData.cs.hlsl"
+#include "ShaderLibrary/HaltonSequence.hlsl"
+
+RWBuffer<uint> RWIndirectArgsBuffer;
+RWStructuredBuffer<GrassInstanceData> RWGrassInstanceDataBuffer;
+
+[numthreads(1,1,1)]
+void InitInidrect(uint3 id : SV_DispatchThreadID)
+{
+    RWIndirectArgsBuffer[1] = 0;
+}
+
+[numthreads(8,8,1)]
+void GenerateGrassBlade(uint3 id : SV_GroupThreadID)
+{    
+    uint index;
+    InterlockedAdd(RWIndirectArgsBuffer[1], 1, index);
+    
+    float2 pos = HaltonSeq_64(id.x, id.y) * 8;
+    GrassInstanceData data;
+    data.position = float3(pos.x, 0, pos.y);
+    data.lod = 0;
+    
+    RWGrassInstanceDataBuffer[index] = data;
+}
