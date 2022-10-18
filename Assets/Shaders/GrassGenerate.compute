@@ -3,9 +3,14 @@
 
 #include "ShaderLibrary/GrassInstanceData.cs.hlsl"
 #include "ShaderLibrary/HaltonSequence.hlsl"
+#include "ShaderLibrary/HashFunction.hlsl"
 
 RWBuffer<uint> RWIndirectArgsBuffer;
 RWStructuredBuffer<GrassInstanceData> RWGrassInstanceDataBuffer;
+
+uint _DispatchRowCount;
+float _JitterScale;
+float _PatchSize;
 
 [numthreads(1,1,1)]
 void InitInidrect(uint3 id : SV_DispatchThreadID)
@@ -14,15 +19,24 @@ void InitInidrect(uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(8,8,1)]
-void GenerateGrassBlade(uint3 id : SV_GroupThreadID)
+void GenerateGrassBlade(uint3 id : SV_DISPATCHTHREADID)
 {    
     uint index;
     InterlockedAdd(RWIndirectArgsBuffer[1], 1, index);
+
+    float2 offset = (HaltonSeq_64(id.x, id.y) * 2 - 1) * _JitterScale;
+    float2 pos = float2(id.x,id.y) /  _DispatchRowCount * _PatchSize;
+    float hash = hash21(pos);
     
-    float2 pos = HaltonSeq_64(id.x, id.y) * 8;
+    float randomno =  frac(sin(dot(pos, float2(12.9898, 78.233)))*43758.5453);
+    
+    pos += (HaltonSeq64[floor(randomno *64)] * 2 - 1) * _JitterScale;
+
+    //float2 pos = offset;
+    
     GrassInstanceData data;
     data.position = float3(pos.x, 0, pos.y);
-    data.lod = 0;
+    data.hash = hash;
     
     RWGrassInstanceDataBuffer[index] = data;
 }

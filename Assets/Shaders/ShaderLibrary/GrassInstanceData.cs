@@ -7,5 +7,5 @@ using UnityEngine.Rendering;
 struct GrassInstanceData
 {
     public Vector3 position;
-    public float lod;
+    public float hash;
 }

@@ -7,9 +7,11 @@ using System.Runtime.InteropServices;
 
 public class GrassBladeRenderManager : MonoBehaviour
 {
-    [SerializeField] private Mesh m_TestMesh;
+    [SerializeField] private Mesh m_SampleMesh;
     [SerializeField] private Material m_Material;
     [SerializeField] private ComputeShader m_GrassGenerateCS;
+    [SerializeField] [Range(0.0f, 1.0f)] private float m_JitterScale = 0.2f;
+    [SerializeField] [Range(0.0f, 64.0f)] private float m_PatchSize = 8.0f;
     private ComputeBuffer m_InstanceBuffer;
     private ComputeBuffer m_IndirectBuffer;
     private CommandBuffer m_Cmd;
@@ -25,6 +27,9 @@ public class GrassBladeRenderManager : MonoBehaviour
     private int RWIndirectBufferName = Shader.PropertyToID("RWIndirectArgsBuffer");
     private int RWGrassInstanceDataBufferName = Shader.PropertyToID("RWGrassInstanceDataBuffer");
     private int GrassInstanceDataBufferName = Shader.PropertyToID("GrassInstanceDataBuffer");
+    private int DispatchRowCountName = Shader.PropertyToID("_DispatchRowCount");
+    private int JitterScaleName = Shader.PropertyToID("_JitterScale");
+    private int PatchSizeName = Shader.PropertyToID("_PatchSize");
 
     private void OnEnable()
     {
@@ -36,10 +41,10 @@ public class GrassBladeRenderManager : MonoBehaviour
         m_InitIndirectKernel = m_GrassGenerateCS.FindKernel(k_InitIndirectKernelName);
 
         uint[] data = { 0, 0, 0, 0, 0 };
-        data[0] = 1;
+        data[0] = m_SampleMesh.GetIndexCount(0);
         data[1] = 0;
         data[2] = 0;
-        data[3] = 0;        
+        data[3] = 0;
 
         m_IndirectBuffer.SetData(data);
 
@@ -64,16 +69,19 @@ public class GrassBladeRenderManager : MonoBehaviour
 
     void GenerateInstanceDataPass(CommandBuffer cmd)
     {
+        int dispatchGroup = 8;
+        cmd.SetComputeIntParam(m_GrassGenerateCS, DispatchRowCountName, dispatchGroup * 8);
+        cmd.SetComputeFloatParam(m_GrassGenerateCS, JitterScaleName, m_JitterScale);
+        cmd.SetComputeFloatParam(m_GrassGenerateCS, PatchSizeName, m_PatchSize);
         cmd.SetComputeBufferParam(m_GrassGenerateCS, m_GenerateGrassBladeKernel, RWIndirectBufferName, m_IndirectBuffer);
         cmd.SetComputeBufferParam(m_GrassGenerateCS, m_GenerateGrassBladeKernel, RWGrassInstanceDataBufferName, m_InstanceBuffer);
 
-        cmd.DispatchCompute(m_GrassGenerateCS, m_GenerateGrassBladeKernel, 1, 1, 1);
+        cmd.DispatchCompute(m_GrassGenerateCS, m_GenerateGrassBladeKernel, dispatchGroup, dispatchGroup, 1);
     }
 
     void RenderGrassBlade()
     {
-        //Graphics.DrawMeshInstancedIndirect(m_TestMesh, 0, m_Material, new Bounds(Vector3.zero, Vector3.one * 10240), m_IndirectBuffer);
-        Graphics.DrawProceduralIndirect(m_Material, new Bounds(Vector3.zero, Vector3.one * 10240), MeshTopology.Points, m_IndirectBuffer);
+        Graphics.DrawMeshInstancedIndirect(m_SampleMesh, 0, m_Material, new Bounds(Vector3.zero, Vector3.one * 10240), m_IndirectBuffer);
     }
 
     private void OnDisable()

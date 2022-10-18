@@ -49,7 +49,7 @@ static const float2 HaltonSeq256[256] =
     float2(0.1211, 0.7791), float2(0.6211, 0.2236), float2(0.3711, 0.5569), float2(0.8711, 0.8903), float2(0.2461, 0.0384), float2(0.7461, 0.3717), float2(0.4961, 0.7051), float2(0.9961, 0.1495)
 };
 
-#define HaltonSeq_64(x,y) HaltonSeq64[x + y * 8]
-#define HaltonSeq_256(x,y) HaltonSeq256[x + 16 * y]
+#define HaltonSeq_64(x,y) HaltonSeq64[(x % 8) + (y % 8) * 8]
+#define HaltonSeq_256(x,y) HaltonSeq256[(x % 16) + (y % 16) * 16]
 
 #endif

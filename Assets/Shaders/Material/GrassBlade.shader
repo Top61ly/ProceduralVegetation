@@ -12,10 +12,10 @@ Shader "Example/GrassBlade"
 		{		
 			HLSLPROGRAM
 			
-#pragma enable_d3d11_debug_symbols
+			#pragma enable_d3d11_debug_symbols
 
 			#pragma vertex vert
-			#pragma geometry geom
+			//#pragma geometry geom
 			#pragma fragment frag
 			
 			#pragma multi_compile_instancing
