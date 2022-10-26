@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using System.Runtime.InteropServices;
 
-
+[ExecuteAlways]
 public class GrassBladeRenderManager : MonoBehaviour
 {
     [SerializeField] private Mesh m_SampleMesh;
